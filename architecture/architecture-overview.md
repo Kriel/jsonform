@@ -181,7 +181,7 @@ Below are the methods and lines of note:
 - `formNode.prototype.setContent = function (html, parentEl) {`, line 2710 - Inject node HTML into the dom
 - `formNode.prototype.updateElement = function (domNode) {`, line 2747 - Refresh the dom for a specific node
 - `formNode.prototype.generate = function () {`, line 2787 - Generate HTML (**QUESTION:** How does this differ from all the other render related methods? Is this the start method?)
-- `$.fn.jsonFormErrors = function(errors, options) {`, line 3710 - Highlight validation errors
+- `$.fn.jsonFormErrors = function(errors, options) {`, line 3710 - Highlight validation errors in the UI
 
 # Calculating initial field values
 
@@ -222,7 +222,7 @@ This method is defined from line 2574 to line 2673.
     }
 
 
-# Inject node HTML into the dom
+# Inject node (`formNode`) HTML into the dom
 
 Line 2710
 
@@ -231,16 +231,7 @@ Line 2710
     }
 
 
-# Using the form layout feature
-
-Line 3257
-
-    formTree.prototype.buildFromLayout = function (formElement, context) {
-        ...
-    }
-
-
-# To classify
+# `formNode` remaining to classify
 
     formNode.prototype.enhance = function () {
 
@@ -263,3 +254,199 @@ Line 3131
       this.root = null;
       this.formDesc = null;
     };
+
+# Using the `formTree` form layout feature
+
+Line 3257
+
+Also, injects the existing, previously-submitted values that are stored in `this.formDesc.value`
+
+    /**
+     * Builds the internal form tree representation from the requested layout.
+     *
+     * The function is recursive, generating the node children as necessary.
+     * The function extracts the values from the previously submitted values
+     * (this.formDesc.value) or from default values defined in the schema.
+     *
+     * @function
+     * @param {Object} formElement JSONForm element to render
+     * @param {Object} context The parsing context (the array depth in particular)
+     * @return {Object} The node that matches the element.
+     */
+    formTree.prototype.buildFromLayout = function (formElement, context) {
+        ...
+    }
+
+## Using the provided form `value`
+
+The method `formTree.prototype.buildFromLayout` is at least one of the methods that consumes `value`
+
+### Compute initial values also uses `value`
+
+Line 3516
+
+    /**
+     * Computes the values associated with each input field in the tree based
+     * on previously submitted values or default values in the JSON schema.
+     *
+     * For arrays, the function actually creates and inserts additional
+     * nodes in the tree based on previously submitted values (also ensuring
+     * that the array has at least one item).
+     *
+     * The function sets the array path on all nodes.
+     * It should be called once in the lifetime of a form tree right after
+     * the tree structure has been created.
+     *
+     * @function
+     */
+    formTree.prototype.computeInitialValues = function () {
+      this.root.computeInitialValues(this.formDesc.value);
+    };
+
+
+# Rendering the form tree into the `DOM` ROOT
+
+Line 3528
+
+    /**
+     * Renders the form tree
+     *
+     * @function
+     * @param {Node} domRoot The "form" element in the DOM tree that serves as
+     *  root for the form
+     */
+    formTree.prototype.render = function (domRoot) {
+        ...
+    }
+
+## Compute if the forms schema has AT LEAST ONE required fields
+
+A function to crawl the tree and determine this is at line 3650.
+
+    formTree.prototype.hasRequiredField = function () {
+        ...
+    }
+
+
+# Applying a function to an entire form tree with `formTree.forEachElement`
+
+It is a recursive function that applies a function to all nodes in a formTree.
+
+    callback(root.children[i]);
+
+This function is defined at approximately line 3547.
+
+    /**
+     * Walks down the element tree with a callback
+     *
+     * @function
+     * @param {Function} callback The callback to call on each element
+     */
+    formTree.prototype.forEachElement = function (callback) {
+
+# Form validation via `formTree` method `formTree.prototype.validate`
+
+The method that does validation is defined on line 3559
+
+    formTree.prototype.validate = function(noErrorDisplay) {
+        ...
+    }
+
+## Rendering validation errors `$.fn.jsonFormErrors`
+
+Defined on line 3710.
+
+    $.fn.jsonFormErrors = function(errors, options) {
+      $(".error", this).removeClass("error");
+      $(".warning", this).removeClass("warning");
+
+      $(".jsonform-errortext", this).hide();
+
+      if (!errors) return;
+      ...
+  }
+
+# Form submission via `formTree` method `formTree.prototype.submit`
+
+The submission method is defined at line 3597.
+
+    formTree.prototype.submit = function(evt) {
+        ...
+    }
+
+# Form value extraction at the top-level is triggered off of `jsonForm.getFormValue`
+
+In turn, it calls `form.root.getFormValues`.
+
+This tells us that `form.root` is likely a `formNode` because `getFormValues` is only defined on `formNode`.
+
+The jsonForm.getFormValue function is relatively simple.
+
+It extracts the form element using JQuery, and then recursively processes the underlying data.
+
+Below is the full method:
+
+    /**
+     * Returns the structured object that corresponds to the form values entered
+     * by the user for the given form.
+     *
+     * The form must have been previously rendered through a call to jsonform.
+     *
+     * @function
+     * @param {Node} The <form> tag in the DOM
+     * @return {Object} The object that follows the data schema and matches the
+     *  values entered by the user.
+     */
+    jsonform.getFormValue = function (formelt) {
+      var form = $(formelt).data('jsonform-tree');
+      if (!form) return null;
+      return form.root.getFormValues();
+    };
+
+# `JQuery` exposed functions
+
+## `jsonForm` Create form
+
+This is the main entrypoint for jsonForm defined on line 3780
+
+    $.fn.jsonForm = function(options) {
+        ...
+    }
+
+## `jsonFormValue` Get the JSON formatted form data entered by the user
+
+    /**
+     * Retrieves the structured values object generated from the values
+     * entered by the user and the data schema that gave birth to the form.
+     *
+     * Defined as a jQuery function that typically needs to be applied to
+     * a <form> element whose content has previously been generated by a
+     * call to "jsonForm".
+     *
+     * Unless explicitly disabled, the values are automatically validated
+     * against the constraints expressed in the schema.
+     *
+     * @function
+     * @return {Object} Structured values object that matches the user inputs
+     *  and the data schema.
+     */
+    $.fn.jsonFormValue = function() {
+      return jsonform.getFormValue(this);
+    };
+
+## `jsonFormErrors` render validation errors
+
+Defined on line 3710.
+
+    $.fn.jsonFormErrors = function(errors, options) {
+        $(".error", this).removeClass("error");
+        $(".warning", this).removeClass("warning");
+
+        $(".jsonform-errortext", this).hide();
+        if (!errors) return;
+
+        var errorSelectors = [];
+        for (var i = 0; i < errors.length; i++) {
+            ...
+        }
+    }
