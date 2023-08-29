@@ -150,3 +150,116 @@ The object is first defined around line 67.
        */
       var jsonform = {util:{}};
 
+# Helper methods and helper data are loaded from the opening lines to line 116
+
+1. General helper methods and helper data are loaded from the opening lines to line 116
+2. Tab initialization methods and logic go from line 118 to line 207.
+
+# Confusing array logic
+
+1. `truncateToArrayDepth`, line 1733
+2. `applyArrayPath`, line 1770
+
+
+# NODE Logic - Tree Represenation
+
+`formNode` is the class type around which trees are built.
+
+Below are the methods and lines of note:
+
+- `var formNode = function () {`, line 1923
+- `formNode.prototype.clone = function (parentNode) { `, line 2025
+- `formNode.prototype.hasNonDefaultValue = function () {`, line 2047
+- `formNode.prototype.appendChild = function (node) {`, line 2073
+- `formNode.prototype.removeChild = function () {`, line 2086
+- `formNode.prototype.moveValuesTo = function (node) {`, line 2117 - For `ARRAYS`
+- `formNode.prototype.switchValuesWith = function (node) {`, line 2138 - For `ARRAYS`
+- `formNode.prototype.resetValues = function () {`, line 2156 - Clear the values from the form. Includes emptying arrays.
+- `formNode.prototype.setChildTemplate = function (node) {`, line 2209 - For complex arrays
+- `formNode.prototype.render = function (el) {`, line 2687 - Render a node
+- `formNode.prototype.getFormValues = function (updateArrayPath) {`, line 2574 to line 2673 - Grab the forms `JSON DATA` for a SPECIFIC node
+- `formNode.prototype.setContent = function (html, parentEl) {`, line 2710 - Inject node HTML into the dom
+- `formNode.prototype.updateElement = function (domNode) {`, line 2747 - Refresh the dom for a specific node
+- `formNode.prototype.generate = function () {`, line 2787 - Generate HTML (**QUESTION:** How does this differ from all the other render related methods? Is this the start method?)
+- `$.fn.jsonFormErrors = function(errors, options) {`, line 3710 - Highlight validation errors
+
+# Calculating initial field values
+
+Around line 2215 to line 2493.
+
+    /**
+     * Recursively sets values to all nodes of the current subtree
+     * based on previously submitted values, or based on default
+     * values when the submitted values are not enough
+     *
+     * The function should be called once in the lifetime of a node
+     * in the tree. It expects its parent's arrayPath to be up to date.
+     *
+     * Three cases may arise:
+     * 1. if the form element is a simple input field, the value is
+     * extracted from previously submitted values of from default values
+     * defined in the schema.
+     * 2. if the form element is an array-like node, the child template
+     * is used to create as many children as possible (and at least one).
+     * 3. the function simply recurses down the node's subtree otherwise
+     * (this happens when the form element is a fieldset-like element).
+     *
+     * @function
+     * @param {Object} values Previously submitted values for the form
+     * @param {Boolean} ignoreDefaultValues Ignore default values defined in the
+     *  schema when set.
+     */
+    formNode.prototype.computeInitialValues = function (values, ignoreDefaultValues) { 
+
+# Grab the forms `JSON DATA` for a SPECIFIC node
+
+This is the method that GRABS the form data in a JSON format that should match the ORIGINAL JSON Schema.
+
+This method is defined from line 2574 to line 2673.
+
+    formNode.prototype.getFormValues = function (updateArrayPath) {
+        ...
+    }
+
+
+# Inject node HTML into the dom
+
+Line 2710
+
+    formNode.prototype.setContent = function (html, parentEl) {
+        ...
+    }
+
+
+# Using the form layout feature
+
+Line 3257
+
+    formTree.prototype.buildFromLayout = function (formElement, context) {
+        ...
+    }
+
+
+# To classify
+
+    formNode.prototype.enhance = function () {
+
+
+# `FormTree` holds `FormNode`s?
+
+Line 3131
+
+    /**
+     * Form tree class.
+     *
+     * Holds the internal representation of the form.
+     * The tree is always in sync with the rendered form, this allows to parse
+     * it easily.
+     *
+     * @class
+     */
+    var formTree = function () {
+      this.eventhandlers = [];
+      this.root = null;
+      this.formDesc = null;
+    };
