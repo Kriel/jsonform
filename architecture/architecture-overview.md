@@ -71,6 +71,56 @@ The source heirarchy is:
      * 2. the default value defined in the layout of the form
      * 3. the default value defined in the schema
 
+# Dynamically updating forms fields
+
+The first method JSON forms uses is jQuery to find an input field and change it's value at run-time by triggering off of an event.
+
+For example, below is code from field type `file-hosted-public` in its OnChange handler defintion:
+
+    onSuccess: function (assembly) {
+          // Image has been uploaded. Check the "results" property that
+          // contains the list of files that Transloadit produced. There
+          // should be one image per file input in the form at most.
+          var results = _.values(assembly.results);
+          results = _.flatten(results);
+          _.each(results, function (result) {
+            // Save the assembly result in the right hidden input field
+            var id = elt.ownerTree._transloadit_generic_elts[result.field].id;
+            var input = formElt.find('#' + escapeSelector(id));
+            var nonEmptyKeys = _.filter(_.keys(result.meta), function (key) {
+              return !!isSet(result.meta[key]);
+            });
+            result.meta = _.pick(result.meta, nonEmptyKeys);
+            input.val(JSON.stringify(result));                          <---- USING JQUERY TO DYNAMICALLY UPDATE THE FIELD VALUE
+          });
+
+Though desired, the second method -- to change the underlying data and automatically re-render the form, does not exist.
+
+The below comment from JSON Form explains:
+
+    // Note "switchValuesWith" extracts values from the DOM since field
+    // values are not synchronized with the tree data structure, so calls
+    // to render are needed at each step to force values down to the DOM
+    // before next move.
+    // TODO: synchronize field values and data structure completely and
+    // call render only once to improve efficiency.
+
+Note, it says:
+
+    "switchValuesWith" extracts values from the DOM since field values are not synchronized with the tree data structure
+
+Thus, method one is currently the only supported method.
+
+
+# Triggering a re-render
+
+Nodes can be re-rendered at the node level...
+
+Here is an example from the OnInsert handler for the array field type at approximately line 920 in jsonform.js
+
+    node.children[i].render(parentEl.get(0));
+    node.children[i + incr].render(parentEl.get(0));
+
 
 # Building a lookup key from the Schema
 
@@ -450,3 +500,4 @@ Defined on line 3710.
             ...
         }
     }
+
